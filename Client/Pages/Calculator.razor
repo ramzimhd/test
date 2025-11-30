@@ -36,6 +36,7 @@
 </div>
 
 @code {
+    private const string ErrorDisplay = "Error";
     private string display = "0";
     private double? firstOperand = null;
     private char? currentOperator = null;
@@ -119,7 +120,7 @@
             case '/':
                 if (secondOperand == 0)
                 {
-                    display = "Error";
+                    display = ErrorDisplay;
                     firstOperand = null;
                     currentOperator = null;
                     waitingForSecondOperand = false;
@@ -129,10 +130,21 @@
                 break;
         }
 
-        display = result.ToString();
+        display = FormatResult(result);
         firstOperand = result;
         currentOperator = null;
         waitingForSecondOperand = true;
+    }
+
+    private string FormatResult(double result)
+    {
+        if (double.IsInfinity(result) || double.IsNaN(result))
+        {
+            return ErrorDisplay;
+        }
+        
+        string formatted = result.ToString("G10");
+        return formatted;
     }
 
     private void Clear()
@@ -145,7 +157,7 @@
 
     private void Delete()
     {
-        if (waitingForSecondOperand || display == "Error")
+        if (waitingForSecondOperand || display == ErrorDisplay)
         {
             Clear();
             return;
@@ -153,7 +165,7 @@
 
         if (display.Length > 1)
         {
-            display = display.Substring(0, display.Length - 1);
+            display = display[..^1];
         }
         else
         {
