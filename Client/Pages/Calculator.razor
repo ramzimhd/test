@@ -1,0 +1,163 @@
+@page "/calculator"
+
+<div class="content-container">
+    <div class="content-title-group">
+        <h2>Calculator</h2>
+    </div>
+    <div class="calculator">
+        <div class="calculator-display">
+            <span class="display-value">@display</span>
+        </div>
+        <div class="calculator-buttons">
+            <button class="btn-clear" @onclick="Clear">C</button>
+            <button class="btn-operator" @onclick="@(() => SetOperator('/'))">÷</button>
+            <button class="btn-operator" @onclick="@(() => SetOperator('*'))">×</button>
+            <button class="btn-operator" @onclick="Delete">⌫</button>
+
+            <button class="btn-number" @onclick="@(() => AppendDigit('7'))">7</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('8'))">8</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('9'))">9</button>
+            <button class="btn-operator" @onclick="@(() => SetOperator('-'))">−</button>
+
+            <button class="btn-number" @onclick="@(() => AppendDigit('4'))">4</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('5'))">5</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('6'))">6</button>
+            <button class="btn-operator" @onclick="@(() => SetOperator('+'))">+</button>
+
+            <button class="btn-number" @onclick="@(() => AppendDigit('1'))">1</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('2'))">2</button>
+            <button class="btn-number" @onclick="@(() => AppendDigit('3'))">3</button>
+            <button class="btn-equals" @onclick="Calculate">=</button>
+
+            <button class="btn-number btn-zero" @onclick="@(() => AppendDigit('0'))">0</button>
+            <button class="btn-number" @onclick="AppendDecimal">.</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string display = "0";
+    private double? firstOperand = null;
+    private char? currentOperator = null;
+    private bool waitingForSecondOperand = false;
+
+    private void AppendDigit(char digit)
+    {
+        if (waitingForSecondOperand)
+        {
+            display = digit.ToString();
+            waitingForSecondOperand = false;
+        }
+        else if (display == "0")
+        {
+            display = digit.ToString();
+        }
+        else
+        {
+            display += digit;
+        }
+    }
+
+    private void AppendDecimal()
+    {
+        if (waitingForSecondOperand)
+        {
+            display = "0.";
+            waitingForSecondOperand = false;
+            return;
+        }
+
+        if (!display.Contains('.'))
+        {
+            display += '.';
+        }
+    }
+
+    private void SetOperator(char op)
+    {
+        if (firstOperand == null)
+        {
+            if (double.TryParse(display, out double value))
+            {
+                firstOperand = value;
+            }
+        }
+        else if (!waitingForSecondOperand)
+        {
+            Calculate();
+        }
+
+        currentOperator = op;
+        waitingForSecondOperand = true;
+    }
+
+    private void Calculate()
+    {
+        if (firstOperand == null || currentOperator == null)
+        {
+            return;
+        }
+
+        if (!double.TryParse(display, out double secondOperand))
+        {
+            return;
+        }
+
+        double result = 0;
+
+        switch (currentOperator)
+        {
+            case '+':
+                result = firstOperand.Value + secondOperand;
+                break;
+            case '-':
+                result = firstOperand.Value - secondOperand;
+                break;
+            case '*':
+                result = firstOperand.Value * secondOperand;
+                break;
+            case '/':
+                if (secondOperand == 0)
+                {
+                    display = "Error";
+                    firstOperand = null;
+                    currentOperator = null;
+                    waitingForSecondOperand = false;
+                    return;
+                }
+                result = firstOperand.Value / secondOperand;
+                break;
+        }
+
+        display = result.ToString();
+        firstOperand = result;
+        currentOperator = null;
+        waitingForSecondOperand = true;
+    }
+
+    private void Clear()
+    {
+        display = "0";
+        firstOperand = null;
+        currentOperator = null;
+        waitingForSecondOperand = false;
+    }
+
+    private void Delete()
+    {
+        if (waitingForSecondOperand || display == "Error")
+        {
+            Clear();
+            return;
+        }
+
+        if (display.Length > 1)
+        {
+            display = display.Substring(0, display.Length - 1);
+        }
+        else
+        {
+            display = "0";
+        }
+    }
+}
